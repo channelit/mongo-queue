@@ -7,6 +7,7 @@ import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import org.apache.zookeeper.ZooKeeper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
@@ -42,9 +43,10 @@ public class App {
     @Value("${zk.znode.folder}")
     private String ZK_ZNODE_FOLDER;
 
-    @Value(("${zk.connect.url}"))
+    @Value("${zk.connect.url}")
     private String ZK_CONNECT_URL;
 
+    @Bean
     public MongoClient mongoClient() {
         MongoCredential mongoCredential = MongoCredential.createCredential(DB_MONGO_USER, "admin", DB_MONGO_PSWD.toCharArray());
         MongoClient mongoClient = MongoClients.create(
@@ -57,8 +59,8 @@ public class App {
     }
 
     @Bean
-    public MongoDatabase mongoDatabase() {
-        return mongoClient().getDatabase(DB_MONGO_NAME);
+    public MongoDatabase mongoDatabase(@Qualifier("mongoClient") MongoClient mongoClient) {
+        return mongoClient.getDatabase(DB_MONGO_NAME);
     }
 
     public static void main(String[] args) {
