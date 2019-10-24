@@ -1,9 +1,12 @@
 package biz.cits.idepotent.queue.consumer;
 
-import biz.cits.mongo.SubscriberHelpers;
+import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
-import com.mongodb.reactivestreams.client.Success;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableObserver;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,10 +33,31 @@ public class MongoConsumer {
 
 
     public void processDocuments() throws Throwable {
-        mongoDatabase.getCollection(DB_MONGO_COLL);
-        SubscriberHelpers.ObservableSubscriber subscriber = new SubscriberHelpers.ObservableSubscriber<Success>();
-        mongoCollection.find(eq("status", "new")).subscribe(subscriber);
-        subscriber.await();
+        Document d = null;
+        FindPublisher<Document> publisher = mongoCollection.find(eq("status", "new"));
+        Observable<Document> observable = Observable.fromPublisher(publisher);
+
+        Observer<Document> observer = observable.subscribeWith(new Observer<Document>() {
+            @Override
+            public void onSubscribe(Disposable disposable) {
+
+            }
+
+            @Override
+            public void onNext(Document document) {
+                System.out.println(document.toJson());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("Completed");
+            }
+        });
 
     }
 }
