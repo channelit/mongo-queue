@@ -46,6 +46,7 @@ public class MongoConsumer {
             @Override
             public void onNext(Document document) {
                 System.out.println(document.toJson());
+                mongoDatabase.getCollection("processed").insertOne(document);
             }
 
             @Override
