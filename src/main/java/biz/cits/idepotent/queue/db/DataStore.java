@@ -37,7 +37,7 @@ public class DataStore {
         collection.insertOne(doc).subscribe(new Subscriber<Success>() {
             @Override
             public void onSubscribe(final Subscription s) {
-                s.request(1);  // <--- Data requested and the insertion will now occur
+                s.request(1);
             }
 
             @Override
