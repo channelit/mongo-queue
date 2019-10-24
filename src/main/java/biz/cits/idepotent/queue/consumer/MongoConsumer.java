@@ -32,7 +32,7 @@ public class MongoConsumer {
     }
 
 
-    public void processDocuments() throws Throwable {
+    public void processDocuments() {
         Document d = null;
         FindPublisher<Document> publisher = mongoCollection.find(eq("status", "new"));
         Observable<Document> observable = Observable.fromPublisher(publisher);

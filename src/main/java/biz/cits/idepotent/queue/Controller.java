@@ -32,7 +32,7 @@ public class Controller {
     }
 
     @GetMapping(path = "recv", produces = "application/json")
-    public String recvMessages() throws Throwable {
+    public String recvMessages() {
         mongoConsumer.processDocuments();
         return "done";
     }
