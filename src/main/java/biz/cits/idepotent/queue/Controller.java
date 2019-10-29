@@ -1,8 +1,13 @@
 package biz.cits.idepotent.queue;
 
 import biz.cits.idepotent.queue.consumer.MongoConsumer;
+import biz.cits.idepotent.queue.db.DataStore;
 import biz.cits.idepotent.queue.message.MsgGenerator;
 import biz.cits.idepotent.queue.producer.MasterProducer;
+import com.mongodb.reactivestreams.client.MongoDatabase;
+import io.reactivex.Observable;
+import org.bson.Document;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,13 +20,15 @@ import java.util.Map;
 public class Controller {
 
 
-    private MasterProducer masterProducer;
-    private MongoConsumer mongoConsumer;
+    private final MasterProducer masterProducer;
+    private final MongoConsumer mongoConsumer;
+    private final MongoDatabase mongoDatabase;
 
     @Autowired
-    public Controller(MasterProducer masterProducer, MongoConsumer mongoConsumer) {
+    public Controller(MasterProducer masterProducer, MongoConsumer mongoConsumer, DataStore dataStore, MongoDatabase mongoDatabase) {
         this.masterProducer = masterProducer;
         this.mongoConsumer = mongoConsumer;
+        this.mongoDatabase = mongoDatabase;
     }
 
     @GetMapping(path = "send", produces = "application/json")
@@ -35,5 +42,13 @@ public class Controller {
     public String recvMessages() {
         mongoConsumer.processDocuments();
         return "done";
+    }
+
+    @GetMapping(path = "find", produces = "application/json")
+    public String findMessages(@RequestParam String col) {
+        Publisher<Document> publisher = mongoDatabase.getCollection(col).find().first();
+        Observable<Document> observable = Observable.fromPublisher(publisher);
+        Document result = observable.blockingFirst();
+        return result.toJson();
     }
 }
