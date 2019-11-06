@@ -2,9 +2,10 @@ package biz.cits.idepotent.queue.zk;
 
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
+import biz.cits.idepotent.queue.message.MsgGenerator;
+import biz.cits.idepotent.queue.producer.MasterProducer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -24,6 +25,8 @@ public class ZkNodeWatcher implements ApplicationRunner {
     @Value("${zk.znode.folder}")
     private String ZK_ZNODE_FOLDER;
 
+    private final MasterProducer masterProducer;
+
     private static final String PROCESS_NODE_PREFIX = "/p_";
 
     private final int id;
@@ -33,8 +36,9 @@ public class ZkNodeWatcher implements ApplicationRunner {
     private String processNodePath;
     private String watchedNodePath;
 
-
-    public ZkNodeWatcher(@Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
+    @Autowired
+    public ZkNodeWatcher(MasterProducer masterProducer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
+        this.masterProducer = masterProducer;
         this.id = id;
         zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());
     }
@@ -49,6 +53,15 @@ public class ZkNodeWatcher implements ApplicationRunner {
         if (index == 0) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] I am the new leader!");
+                TimerTask tt = new TimerTask(){
+                    @Override
+                    public void run() {
+                        ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
+                        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue()));
+                    }
+                };
+                Timer t = new Timer("Message Sender");
+                t.scheduleAtFixedRate(tt, 1000, 10000);
             }
         } else {
             final String watchedNodeShortPath = childNodePaths.get(index - 1);

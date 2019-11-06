@@ -4,3 +4,8 @@
 - ## Spring Boot
 - ## RxJava 2
 - ## MongoDB Reactive API
+
+```shell script
+docker cp replica.js mongo1:/.
+docker exec mongo1 bash -c 'mongo < /replica.js'
+```

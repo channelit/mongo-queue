@@ -21,19 +21,23 @@ public class DataStore {
 
     private final MongoDatabase mongoDatabase;
 
+
+    private final String QUEUE_DB = "queue";
+
     @Autowired
     public DataStore(MongoDatabase mongoDatabase) {
         this.mongoDatabase = mongoDatabase;
     }
 
     public void queueData(String key, HashMap<String, String> records) {
-        MongoCollection collection = mongoDatabase.getCollection("queue");
+        MongoCollection collection = mongoDatabase.getCollection(QUEUE_DB);
         Document doc = new Document("key", key);
         records.forEach((k, v) -> {
             doc.append("data", v);
         });
         doc.append("source", MY_ID);
         doc.append("status", "new");
+
         collection.insertOne(doc).subscribe(new Subscriber<Success>() {
             @Override
             public void onSubscribe(final Subscription s) {

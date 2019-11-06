@@ -1,18 +1,28 @@
 package biz.cits.idepotent.queue.consumer;
 
-import com.mongodb.reactivestreams.client.FindPublisher;
+import com.mongodb.MongoTimeoutException;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.FullDocument;
+import com.mongodb.reactivestreams.client.ChangeStreamPublisher;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DisposableObserver;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import static com.mongodb.client.model.Filters.eq;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Component
 public class MongoConsumer {
@@ -31,34 +41,94 @@ public class MongoConsumer {
 
     }
 
+    public void subscribe(String collection) throws Throwable {
+        List<Bson> updatePipeline = Collections.singletonList(
+                Aggregates.match(
+                        Filters.and(
+                                Document.parse("{'fullDocument.status':'new'}")
+                        )
+                )
+        );
+        ChangeStreamPublisher<Document> publisher = mongoDatabase.getCollection(collection).watch(updatePipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+        ObservableSubscriber<ChangeStreamDocument<Document>> subscriber = new ObservableSubscriber<>(true);
+        publisher.subscribe(subscriber);
 
-    public void processDocuments() {
-        Document d = null;
-        FindPublisher<Document> publisher = mongoCollection.find(eq("status", "new"));
-        Observable<Document> observable = Observable.fromPublisher(publisher);
-
-        Observer<Document> observer = observable.subscribeWith(new Observer<Document>() {
-            @Override
-            public void onSubscribe(Disposable disposable) {
-
-            }
-
-            @Override
-            public void onNext(Document document) {
-                System.out.println(document.toJson());
-                mongoDatabase.getCollection("processed").insertOne(document);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-
-            }
-
-            @Override
-            public void onComplete() {
-                System.out.println("Completed");
-            }
-        });
+        subscriber.waitForThenCancel(10);
 
     }
+
+    private static class ObservableSubscriber<T> implements Subscriber<T> {
+        private final CountDownLatch latch;
+        private final List<T> results = new ArrayList<T>();
+        private final boolean printResults;
+
+        private volatile int minimumNumberOfResults;
+        private volatile int counter;
+        private volatile Subscription subscription;
+        private volatile Throwable error;
+
+        public ObservableSubscriber(final boolean printResults) {
+            this.printResults = printResults;
+            this.latch = new CountDownLatch(1);
+        }
+
+        @Override
+        public void onSubscribe(final Subscription s) {
+            subscription = s;
+            subscription.request(Integer.MAX_VALUE);
+        }
+
+        @Override
+        public void onNext(final T t) {
+            results.add(t);
+            if (printResults) {
+                System.out.println(">>>>>>>>> t >>>>>>>" + t);
+            }
+            counter++;
+            if (counter >= minimumNumberOfResults) {
+                latch.countDown();
+            }
+        }
+
+        @Override
+        public void onError(final Throwable t) {
+            error = t;
+            System.out.println(t.getMessage());
+            onComplete();
+        }
+
+        @Override
+        public void onComplete() {
+            latch.countDown();
+        }
+
+        public List<T> getResults() {
+            return results;
+        }
+
+        public void await() throws Throwable {
+            if (!latch.await(10, SECONDS)) {
+                throw new MongoTimeoutException("Publisher timed out");
+            }
+            if (error != null) {
+                throw error;
+            }
+        }
+
+        public void waitForThenCancel(final int minimumNumberOfResults) throws Throwable {
+            this.minimumNumberOfResults = minimumNumberOfResults;
+            if (minimumNumberOfResults > counter) {
+                await();
+            }
+            subscription.request(10);
+        }
+    }
+
+    private static <T> void subscribeAndAwait(final Publisher<T> publisher) throws Throwable {
+        ObservableSubscriber<T> subscriber = new ObservableSubscriber<T>(false);
+        publisher.subscribe(subscriber);
+        subscriber.await();
+    }
+
+
 }
