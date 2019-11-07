@@ -8,6 +8,9 @@ import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.reactivestreams.client.ChangeStreamPublisher;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import com.mongodb.reactivestreams.client.Success;
+import io.reactivex.Observable;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.reactivestreams.Publisher;
@@ -50,10 +53,25 @@ public class MongoConsumer {
                 )
         );
         ChangeStreamPublisher<Document> publisher = mongoDatabase.getCollection(collection).watch(updatePipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
-        ObservableSubscriber<ChangeStreamDocument<Document>> subscriber = new ObservableSubscriber<>(true);
-        publisher.subscribe(subscriber);
 
-        subscriber.waitForThenCancel(10);
+        Observable<ChangeStreamDocument<Document>> observable = Observable.fromPublisher(publisher);
+        observable.buffer(10);
+        observable.forEach(t->{
+            processObserved(t);
+            System.out.println(t.getFullDocument().toJson());
+        });
+//        ObservableSubscriber<ChangeStreamDocument<Document>> subscriber = new ObservableSubscriber<>(true);
+//        publisher.subscribe(subscriber);
+//
+//        subscriber.waitForThenCancel(10);
+
+    }
+
+    private void processObserved(ChangeStreamDocument<Document> t) {
+        Document updateStatus = new Document("status", "processing");
+        long cnt = Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
+                Document.parse("{$set : { status: 'processing'}}"))).blockingFirst().getModifiedCount();
+        System.out.println("updated " + cnt);
 
     }
 

@@ -19,7 +19,6 @@ public class ZkService {
 
     @Autowired
     public ZkService(@Value(("${zk.connect.url}")) final String zkUrl, final ZkNodeWatcher.ProcessNodeWatcher zkNodeWatcher) throws IOException {
-
         zooKeeper = new ZooKeeper(zkUrl, 3000, zkNodeWatcher);
     }
 
