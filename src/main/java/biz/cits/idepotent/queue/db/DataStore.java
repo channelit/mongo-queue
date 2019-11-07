@@ -31,7 +31,7 @@ public class DataStore {
         MongoCollection<Document> collection = mongoDatabase.getCollection(QUEUE_DB);
         Document doc = new Document("key", key);
         records.forEach((k, v) -> {
-            doc.append("data", v);
+            doc.append(k, v);
         });
         doc.append("source", MY_ID);
         doc.append("status", "new");

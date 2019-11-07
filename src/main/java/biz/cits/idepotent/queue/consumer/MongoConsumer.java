@@ -22,6 +22,9 @@ public class MongoConsumer {
 
     private final MongoDatabase mongoDatabase;
 
+    @Value("${my.id}")
+    private String MY_ID;
+
     @Value("${db.mongo.coll}")
     String DB_MONGO_COLL;
 
@@ -37,7 +40,8 @@ public class MongoConsumer {
         List<Bson> updatePipeline = Collections.singletonList(
                 Aggregates.match(
                         Filters.and(
-                                Document.parse("{'fullDocument.status':'new'}")
+                                Document.parse("{'fullDocument.status':'new'}"),
+                                Document.parse("{'fullDocument.source':'" + MY_ID + "'}")
                         )
                 )
         );

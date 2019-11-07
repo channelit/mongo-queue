@@ -7,19 +7,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class MasterProducer {
 
-    @Autowired
-    private DataStore dataStore;
+    private final DataStore dataStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MasterProducer.class);
 
-    public void sendMessage(String key, String value) {
+    @Autowired
+    public MasterProducer(DataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+
+    public void sendMessage(String key, String value, Optional<Map<String, String>> data) {
         LOGGER.info("Sending message " + value);
         HashMap<String, String> records = new HashMap<>();
-        records.put(key, value);
+        records.put("data", value);
+        data.ifPresent(records::putAll);
         dataStore.queueData(key, records);
     }
 }

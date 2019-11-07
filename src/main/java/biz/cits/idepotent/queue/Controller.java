@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 public class Controller {
@@ -37,7 +39,7 @@ public class Controller {
     @GetMapping(path = "send", produces = "application/json")
     public String sendMessages(@RequestParam int numMessage) {
         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(numMessage);
-        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue()));
+        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue(), Optional.empty()));
         return "done";
     }
 

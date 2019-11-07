@@ -50,11 +50,12 @@ public class ZkNodeWatcher implements ApplicationRunner {
         if (index == 0) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] I am the new leader!");
+                Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", childNodePaths.get(new Random().nextInt(childNodePaths.size()))));
                 TimerTask tt = new TimerTask() {
                     @Override
                     public void run() {
                         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
-                        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue()));
+                        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue(), assignment));
                     }
                 };
                 Timer t = new Timer("Message Sender");
