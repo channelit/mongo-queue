@@ -27,13 +27,11 @@ public class ZkService {
         try {
 
             final Stat nodeStat = zooKeeper.exists(node, watch);
-
             if (nodeStat == null) {
                 createdNodePath = zooKeeper.create(node, new byte[0], Ids.OPEN_ACL_UNSAFE, (ephimeral ? CreateMode.EPHEMERAL_SEQUENTIAL : CreateMode.PERSISTENT));
             } else {
                 createdNodePath = node;
             }
-
         } catch (KeeperException | InterruptedException e) {
             throw new IllegalStateException(e);
         }
@@ -46,11 +44,9 @@ public class ZkService {
         boolean watched = false;
         try {
             final Stat nodeStat = zooKeeper.exists(node, watch);
-
             if (nodeStat != null) {
                 watched = true;
             }
-
         } catch (KeeperException | InterruptedException e) {
             throw new IllegalStateException(e);
         }
@@ -59,15 +55,12 @@ public class ZkService {
     }
 
     public List<String> getChildren(final String node, final boolean watch) {
-
         List<String> childNodes = null;
-
         try {
             childNodes = zooKeeper.getChildren(node, watch);
         } catch (KeeperException | InterruptedException e) {
             throw new IllegalStateException(e);
         }
-
         return childNodes;
     }
 

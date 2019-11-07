@@ -1,17 +1,11 @@
 package biz.cits.idepotent;
 
-import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
-import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterType;
-import com.mongodb.reactivestreams.client.ClientSession;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoDatabase;
-import com.mongodb.selector.ServerSelector;
-import io.reactivex.Observable;
-import org.bson.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -25,7 +19,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @SpringBootApplication(exclude = {MongoReactiveAutoConfiguration.class, MongoReactiveRepositoriesAutoConfiguration.class, MongoAutoConfiguration.class, MongoRepositoriesAutoConfiguration.class, MongoDataAutoConfiguration.class})
@@ -64,8 +57,7 @@ public class App {
                         )
 //                        .credential(mongoCredential)
                         .build());
-        Observable<ClientSession> observable = Observable.fromPublisher(mongoClient.startSession());
-        observable.blockingFirst();
+
         return mongoClient;
     }
 

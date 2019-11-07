@@ -44,16 +44,13 @@ public class ZkNodeWatcher implements ApplicationRunner {
     }
 
     private void attemptForLeaderPosition() {
-
         final List<String> childNodePaths = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
-
         Collections.sort(childNodePaths);
-
         int index = childNodePaths.indexOf(processNodePath.substring(processNodePath.lastIndexOf('/') + 1));
         if (index == 0) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] I am the new leader!");
-                TimerTask tt = new TimerTask(){
+                TimerTask tt = new TimerTask() {
                     @Override
                     public void run() {
                         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
@@ -65,9 +62,7 @@ public class ZkNodeWatcher implements ApplicationRunner {
             }
         } else {
             final String watchedNodeShortPath = childNodePaths.get(index - 1);
-
             watchedNodePath = ZK_ZNODE_FOLDER + "/" + watchedNodeShortPath;
-
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] - Setting watch on node with path: " + watchedNodePath);
             }
