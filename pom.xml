@@ -46,9 +46,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.0.RELEASE</version>
-                <configuration>
-                    <excludeGroupIds>org.mongodb</excludeGroupIds>
-                </configuration>
             </plugin>
         </plugins>
     </build>

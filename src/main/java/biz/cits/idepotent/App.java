@@ -49,7 +49,7 @@ public class App {
     public MongoClient mongoClient() {
 //        MongoCredential mongoCredential = MongoCredential.createCredential(DB_MONGO_USER, "admin", DB_MONGO_PSWD.toCharArray());
 
-        List<ServerAddress> hosts = Arrays.asList(new ServerAddress(DB_MONGO_HOST, 27019));
+        List<ServerAddress> hosts = Arrays.asList(new ServerAddress(DB_MONGO_HOST, 27017));
         MongoClient mongoClient = MongoClients.create(
                 MongoClientSettings.builder()
                         .applyToClusterSettings(builder ->

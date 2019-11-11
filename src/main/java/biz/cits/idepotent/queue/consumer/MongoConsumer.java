@@ -1,5 +1,6 @@
 package biz.cits.idepotent.queue.consumer;
 
+import biz.cits.idepotent.queue.zk.ZkNodeWatcher;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -10,6 +11,8 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 import io.reactivex.Observable;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,6 +22,8 @@ import java.util.List;
 
 @Component
 public class MongoConsumer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MongoConsumer.class);
 
     private final MongoDatabase mongoDatabase;
 
@@ -30,18 +35,25 @@ public class MongoConsumer {
 
     private final MongoCollection<Document> mongoCollection;
 
+    private final ZkNodeWatcher zkNodeWatcher;
+
     @Autowired
-    public MongoConsumer(MongoDatabase mongoDatabase, @Value("${db.mongo.coll}") String DB_MONGO_COLL) {
+    public MongoConsumer(MongoDatabase mongoDatabase, @Value("${db.mongo.coll}") String DB_MONGO_COLL, ZkNodeWatcher zkNodeWatcher) {
         this.mongoDatabase = mongoDatabase;
+        this.zkNodeWatcher = zkNodeWatcher;
         this.mongoCollection = mongoDatabase.getCollection(DB_MONGO_COLL);
     }
 
-    public void subscribe(String collection) throws Throwable {
+    public void subscribe(String collection) {
+        String processNodePath = zkNodeWatcher.getProcessNodePath();
+        processNodePath = processNodePath.substring(processNodePath.lastIndexOf('/') + 1);
+        System.out.println("process path ->" + processNodePath);
         List<Bson> updatePipeline = Collections.singletonList(
                 Aggregates.match(
                         Filters.and(
                                 Document.parse("{'fullDocument.status':'new'}"),
-                                Document.parse("{'fullDocument.source':'" + MY_ID + "'}")
+                                Document.parse("{'fullDocument.source':'" + MY_ID + "'}"),
+                                Document.parse("{'fullDocument.assigned':'" + processNodePath + "'}")
                         )
                 )
         );
@@ -50,7 +62,7 @@ public class MongoConsumer {
         observable.buffer(10);
         observable.forEach(t -> {
             processObserved(t);
-            System.out.println(t.getFullDocument().toJson());
+            LOG.trace(t.getFullDocument().toJson());
         });
     }
 
@@ -58,7 +70,8 @@ public class MongoConsumer {
         Document updateStatus = new Document("status", "processing");
         long cnt = Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
                 Document.parse("{$set : { status: 'processing'}}"))).blockingFirst().getModifiedCount();
-        System.out.println("updated " + cnt);
+        String processNodePath = zkNodeWatcher.getProcessNodePath();
+        LOG.info("Node {} processed {}", processNodePath, t.getFullDocument().get("assigned"));
     }
 
 }

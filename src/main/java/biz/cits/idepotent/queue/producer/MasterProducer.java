@@ -15,7 +15,7 @@ public class MasterProducer {
 
     private final DataStore dataStore;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MasterProducer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MasterProducer.class);
 
     @Autowired
     public MasterProducer(DataStore dataStore) {
@@ -23,7 +23,6 @@ public class MasterProducer {
     }
 
     public void sendMessage(String key, String value, Optional<Map<String, String>> data) {
-        LOGGER.info("Sending message " + value);
         HashMap<String, String> records = new HashMap<>();
         records.put("data", value);
         data.ifPresent(records::putAll);

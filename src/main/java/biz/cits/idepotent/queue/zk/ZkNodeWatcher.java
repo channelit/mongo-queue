@@ -43,6 +43,10 @@ public class ZkNodeWatcher implements ApplicationRunner {
         zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());
     }
 
+    public String getProcessNodePath() {
+        return processNodePath;
+    }
+
     private void attemptForLeaderPosition() {
         final List<String> childNodePaths = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
         Collections.sort(childNodePaths);
@@ -50,10 +54,12 @@ public class ZkNodeWatcher implements ApplicationRunner {
         if (index == 0) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] I am the new leader!");
-                Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", childNodePaths.get(new Random().nextInt(childNodePaths.size()))));
                 TimerTask tt = new TimerTask() {
                     @Override
                     public void run() {
+                        List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
+                        LOG.info("Available children :  {} ", availableChildren.toString());
+                        Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(new Random().nextInt(availableChildren.size()))));
                         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
                         messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue(), assignment));
                     }

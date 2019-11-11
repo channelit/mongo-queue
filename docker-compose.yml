@@ -66,8 +66,8 @@ services:
     environment:
 #      ME_CONFIG_MONGODB_ADMINUSERNAME: root
 #      ME_CONFIG_MONGODB_ADMINPASSWORD: password
-      ME_CONFIG_MONGODB_SERVER: mongo2
-      ME_CONFIG_MONGODB_PORT: 27019
+      ME_CONFIG_MONGODB_SERVER: mongo1
+      ME_CONFIG_MONGODB_PORT: 27017
     depends_on:
       - mongo1
       - mongo2
