@@ -27,21 +27,18 @@ public class MongoConsumer {
 
     private final MongoDatabase mongoDatabase;
 
-    @Value("${my.id}")
-    private String MY_ID;
-
-    @Value("${db.mongo.coll}")
-    String DB_MONGO_COLL;
+    private final String MY_ID;
 
     private final MongoCollection<Document> mongoCollection;
 
     private final ZkNodeWatcher zkNodeWatcher;
 
     @Autowired
-    public MongoConsumer(MongoDatabase mongoDatabase, @Value("${db.mongo.coll}") String DB_MONGO_COLL, ZkNodeWatcher zkNodeWatcher) {
+    public MongoConsumer(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, @Value("${db.mongo.queue}") String db_mongo_coll, ZkNodeWatcher zkNodeWatcher) {
         this.mongoDatabase = mongoDatabase;
+        MY_ID = my_id;
         this.zkNodeWatcher = zkNodeWatcher;
-        this.mongoCollection = mongoDatabase.getCollection(DB_MONGO_COLL);
+        this.mongoCollection = mongoDatabase.getCollection(db_mongo_coll);
     }
 
     public void subscribe(String collection) {
