@@ -24,8 +24,6 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
 
     private static final Logger LOG = LoggerFactory.getLogger(MongoConsumer.class);
 
-    private final MongoDatabase mongoDatabase;
-
     private final String MY_ID;
 
     private final MongoCollection<Document> mongoCollection;
@@ -34,7 +32,6 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
 
     @Autowired
     public MasterProcessor(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, @Value("${db.mongo.queue}") String db_mongo_coll, ZkNodeWatcher zkNodeWatcher) {
-        this.mongoDatabase = mongoDatabase;
         MY_ID = my_id;
         this.zkNodeWatcher = zkNodeWatcher;
         this.mongoCollection = mongoDatabase.getCollection(db_mongo_coll);
@@ -52,7 +49,6 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
 
     @Override
     public void processObserved(ChangeStreamDocument<Document> t) {
-        Document updateStatus = new Document("status", "processing");
         long cnt = Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
                 Document.parse("{$set : { status: 'processing'}}"))).blockingFirst().getModifiedCount();
         String processNodePath = zkNodeWatcher.getProcessNodePath();
