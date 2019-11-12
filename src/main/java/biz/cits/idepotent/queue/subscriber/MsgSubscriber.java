@@ -17,7 +17,7 @@ public class MsgSubscriber {
         this.MONGO_QUEUE = MONGO_QUEUE;
     }
 
-    public void processMessages() throws Throwable {
+    public void processMessages() {
         consumer.subscribe(MONGO_QUEUE);
     }
 
