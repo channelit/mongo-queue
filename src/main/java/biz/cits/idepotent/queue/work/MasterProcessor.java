@@ -37,7 +37,13 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
         String processNodePath = zkNodeWatcher.getProcessNodePath();
         List<String> mongoIds = l.stream().map(t -> "ObjectId('" + t.getDocumentKey().getObjectId("_id").getValue().toString() + "')").collect(Collectors.toList());
         UpdateResult results = Observable.fromPublisher(mongoCollection.updateMany(Document.parse("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}"), Document.parse("{$set : { status: 'processing'}}"))).blockingFirst();
-        LOG.info("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}");
+        LOG.debug("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}");
+        LOG.info(results.toString());
+        try {
+            wait(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         LOG.info(results.toString());
         LOG.info("Node {} processed {}", processNodePath, l.size());
     }

@@ -1,7 +1,6 @@
 package biz.cits.idepotent.queue.zk;
 
 
-import biz.cits.idepotent.queue.message.MsgGenerator;
 import biz.cits.idepotent.queue.producer.BaseProducer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -22,25 +21,26 @@ public class ZkNodeWatcher implements ApplicationRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(ZkNodeWatcher.class);
 
-    @Value("${zk.znode.folder}")
-    private String ZK_ZNODE_FOLDER;
-
+    private final String ZK_ZNODE_FOLDER;
     private final BaseProducer<String> producer;
-
     private static final String PROCESS_NODE_PREFIX = "/p_";
-
     private final int id;
-
     private final ZkService zooKeeperService;
-
     private String processNodePath;
     private String watchedNodePath;
+    private final Integer producerBatchSize;
+    private final Integer producerPeriod;
+    private final Integer producerDelay;
 
     @Autowired
-    public ZkNodeWatcher(BaseProducer producer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
+    public ZkNodeWatcher(@Value("${queue.producer.period}") Integer producerPeriod, @Value("${queue.producer.delay}") Integer producerDelay, @Value("${zk.znode.folder}") String zk_znode_folder, BaseProducer<String> producer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL, @Value("${queue.producer.batch.size}") Integer producerBatchSize) throws IOException {
+        this.ZK_ZNODE_FOLDER = zk_znode_folder;
         this.producer = producer;
         this.id = id;
-        zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());
+        this.zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());
+        this.producerBatchSize = producerBatchSize;
+        this.producerPeriod = producerPeriod;
+        this.producerDelay = producerDelay;
     }
 
     public String getProcessNodePath() {
@@ -61,12 +61,11 @@ public class ZkNodeWatcher implements ApplicationRunner {
                     List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
                     LOG.info("Available children :  {} ", availableChildren.toString());
                     Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(new Random().nextInt(availableChildren.size()))));
-                    ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
-                    messages.forEach((e) -> producer.sendMessage(e.getKey(), e.getValue(), assignment));
+                    producer.generateSendMessages(producerBatchSize, assignment);
                 }
             };
             Timer t = new Timer("Message Sender");
-            t.scheduleAtFixedRate(tt, 1000, 10000);
+            t.scheduleAtFixedRate(tt, producerDelay, producerPeriod);
         } else {
             final String watchedNodeShortPath = childNodePaths.get(index - 1);
             watchedNodePath = ZK_ZNODE_FOLDER + "/" + watchedNodeShortPath;
