@@ -1,6 +1,7 @@
 package biz.cits.idepotent.queue.producer;
 
 import biz.cits.idepotent.queue.db.DataStore;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class MasterProducer {
+public class MasterProducer implements BaseProducer<Document> {
 
     private final DataStore dataStore;
 
@@ -28,4 +29,6 @@ public class MasterProducer {
         data.ifPresent(records::putAll);
         dataStore.queueData(key, records);
     }
+
+
 }

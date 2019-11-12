@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 
 import biz.cits.idepotent.queue.message.MsgGenerator;
+import biz.cits.idepotent.queue.producer.BaseProducer;
 import biz.cits.idepotent.queue.producer.MasterProducer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -25,7 +26,7 @@ public class ZkNodeWatcher implements ApplicationRunner {
     @Value("${zk.znode.folder}")
     private String ZK_ZNODE_FOLDER;
 
-    private final MasterProducer masterProducer;
+    private final BaseProducer producer;
 
     private static final String PROCESS_NODE_PREFIX = "/p_";
 
@@ -37,8 +38,8 @@ public class ZkNodeWatcher implements ApplicationRunner {
     private String watchedNodePath;
 
     @Autowired
-    public ZkNodeWatcher(MasterProducer masterProducer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
-        this.masterProducer = masterProducer;
+    public ZkNodeWatcher(MasterProducer producer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
+        this.producer = producer;
         this.id = id;
         zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());
     }
@@ -54,19 +55,19 @@ public class ZkNodeWatcher implements ApplicationRunner {
         if (index == 0) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("[Process: " + id + "] I am the new leader!");
-                TimerTask tt = new TimerTask() {
-                    @Override
-                    public void run() {
-                        List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
-                        LOG.info("Available children :  {} ", availableChildren.toString());
-                        Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(new Random().nextInt(availableChildren.size()))));
-                        ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
-                        messages.forEach((e) -> masterProducer.sendMessage(e.getKey(), e.getValue(), assignment));
-                    }
-                };
-                Timer t = new Timer("Message Sender");
-                t.scheduleAtFixedRate(tt, 1000, 10000);
             }
+            TimerTask tt = new TimerTask() {
+                @Override
+                public void run() {
+                    List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
+                    LOG.info("Available children :  {} ", availableChildren.toString());
+                    Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(new Random().nextInt(availableChildren.size()))));
+                    ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(10);
+                    messages.forEach((e) -> producer.sendMessage(e.getKey(), e.getValue(), assignment));
+                }
+            };
+            Timer t = new Timer("Message Sender");
+            t.scheduleAtFixedRate(tt, 1000, 10000);
         } else {
             final String watchedNodeShortPath = childNodePaths.get(index - 1);
             watchedNodePath = ZK_ZNODE_FOLDER + "/" + watchedNodeShortPath;
