@@ -1,6 +1,7 @@
-package biz.cits.idepotent.queue.producer;
+package biz.cits.idepotent.queue.work;
 
 import biz.cits.idepotent.queue.db.DataStore;
+import biz.cits.idepotent.queue.producer.BaseProducer;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class MasterProducer implements BaseProducer<Document> {
+public class MasterProducer implements BaseProducer<String> {
 
     private final DataStore dataStore;
 
@@ -23,12 +24,12 @@ public class MasterProducer implements BaseProducer<Document> {
         this.dataStore = dataStore;
     }
 
+    @Override
     public void sendMessage(String key, String value, Optional<Map<String, String>> data) {
         HashMap<String, String> records = new HashMap<>();
         records.put("data", value);
         data.ifPresent(records::putAll);
         dataStore.queueData(key, records);
     }
-
 
 }

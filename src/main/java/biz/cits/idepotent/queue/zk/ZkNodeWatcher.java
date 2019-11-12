@@ -1,12 +1,8 @@
 package biz.cits.idepotent.queue.zk;
 
 
-import java.io.IOException;
-import java.util.*;
-
 import biz.cits.idepotent.queue.message.MsgGenerator;
 import biz.cits.idepotent.queue.producer.BaseProducer;
-import biz.cits.idepotent.queue.producer.MasterProducer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -18,6 +14,9 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.util.*;
+
 @Component
 public class ZkNodeWatcher implements ApplicationRunner {
 
@@ -26,7 +25,7 @@ public class ZkNodeWatcher implements ApplicationRunner {
     @Value("${zk.znode.folder}")
     private String ZK_ZNODE_FOLDER;
 
-    private final BaseProducer producer;
+    private final BaseProducer<String> producer;
 
     private static final String PROCESS_NODE_PREFIX = "/p_";
 
@@ -38,7 +37,7 @@ public class ZkNodeWatcher implements ApplicationRunner {
     private String watchedNodePath;
 
     @Autowired
-    public ZkNodeWatcher(MasterProducer producer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
+    public ZkNodeWatcher(BaseProducer producer, @Value("${my.id}") final int id, @Value(("${zk.connect.url}")) final String zkURL) throws IOException {
         this.producer = producer;
         this.id = id;
         zooKeeperService = new ZkService(zkURL, new ProcessNodeWatcher());

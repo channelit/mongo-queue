@@ -3,7 +3,7 @@ package biz.cits.idepotent.queue;
 import biz.cits.idepotent.queue.consumer.MongoConsumer;
 import biz.cits.idepotent.queue.db.DataStore;
 import biz.cits.idepotent.queue.message.MsgGenerator;
-import biz.cits.idepotent.queue.producer.MasterProducer;
+import biz.cits.idepotent.queue.work.MasterProducer;
 import biz.cits.idepotent.queue.subscriber.MsgSubscriber;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import io.reactivex.Observable;
@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
