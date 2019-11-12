@@ -1,6 +1,7 @@
 package biz.cits.idepotent.queue.consumer;
 
 import biz.cits.idepotent.queue.message.BaseProcessor;
+import biz.cits.idepotent.queue.subscriber.BaseSubscriber;
 import biz.cits.idepotent.queue.zk.ZkNodeWatcher;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
@@ -21,23 +22,26 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
-public class MongoConsumer {
+public class MongoSubscriber implements BaseSubscriber {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MongoConsumer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MongoSubscriber.class);
     private final MongoDatabase mongoDatabase;
     private final String MY_ID;
     private final ZkNodeWatcher zkNodeWatcher;
     private final BaseProcessor processor;
+    private final String queueName;
 
     @Autowired
-    public MongoConsumer(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor) {
+    public MongoSubscriber(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor,@Value("${db.mongo.queue}") String queueName) {
         this.mongoDatabase = mongoDatabase;
         MY_ID = my_id;
         this.zkNodeWatcher = zkNodeWatcher;
         this.processor = baseProcessor;
+        this.queueName = queueName;
     }
 
-    public void subscribe(String collection) {
+    @Override
+    public void processMessages() {
         String processNodePath = zkNodeWatcher.getProcessNodePath();
         processNodePath = processNodePath.substring(processNodePath.lastIndexOf('/') + 1);
         System.out.println("process path ->" + processNodePath);
@@ -50,8 +54,9 @@ public class MongoConsumer {
                         )
                 )
         );
-        ChangeStreamPublisher<Document> publisher = mongoDatabase.getCollection(collection).watch(updatePipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+        ChangeStreamPublisher<Document> publisher = mongoDatabase.getCollection(queueName).watch(updatePipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
         Observable<ChangeStreamDocument<Document>> observable = Observable.fromPublisher(publisher);
+        LOG.info("filter set for process {}", processNodePath);
         observable.buffer(10).subscribe(this.processor::processObservedBuffered);
 
         // DO NOT DELETE THIS
@@ -60,5 +65,4 @@ public class MongoConsumer {
         //            LOG.trace(t.getFullDocument().toJson());
         //        });
     }
-
 }

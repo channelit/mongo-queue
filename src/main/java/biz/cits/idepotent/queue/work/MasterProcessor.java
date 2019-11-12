@@ -1,6 +1,6 @@
 package biz.cits.idepotent.queue.work;
 
-import biz.cits.idepotent.queue.consumer.MongoConsumer;
+import biz.cits.idepotent.queue.consumer.MongoSubscriber;
 import biz.cits.idepotent.queue.message.BaseProcessor;
 import biz.cits.idepotent.queue.zk.ZkNodeWatcher;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -22,17 +22,12 @@ import java.util.stream.Collectors;
 @Component
 public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Document>> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MongoConsumer.class);
-
-    private final String MY_ID;
-
+    private static final Logger LOG = LoggerFactory.getLogger(MongoSubscriber.class);
     private final MongoCollection<Document> mongoCollection;
-
     private final ZkNodeWatcher zkNodeWatcher;
 
     @Autowired
-    public MasterProcessor(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, @Value("${db.mongo.queue}") String db_mongo_coll, ZkNodeWatcher zkNodeWatcher) {
-        MY_ID = my_id;
+    public MasterProcessor(MongoDatabase mongoDatabase, @Value("${db.mongo.queue}") String db_mongo_coll, ZkNodeWatcher zkNodeWatcher) {
         this.zkNodeWatcher = zkNodeWatcher;
         this.mongoCollection = mongoDatabase.getCollection(db_mongo_coll);
     }
@@ -40,7 +35,7 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
     @Override
     public void processObservedBuffered(List<ChangeStreamDocument<Document>> l) {
         String processNodePath = zkNodeWatcher.getProcessNodePath();
-        List<String> mongoIds = l.stream().map(t -> "ObjectId('" + t.getFullDocument().getObjectId("_id").toString() + "')").collect(Collectors.toList());
+        List<String> mongoIds = l.stream().map(t -> "ObjectId('" + t.getDocumentKey().getObjectId("_id").getValue().toString() + "')").collect(Collectors.toList());
         UpdateResult results = Observable.fromPublisher(mongoCollection.updateMany(Document.parse("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}"), Document.parse("{$set : { status: 'processing'}}"))).blockingFirst();
         LOG.info("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}");
         LOG.info(results.toString());

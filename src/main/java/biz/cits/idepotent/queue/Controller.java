@@ -1,10 +1,8 @@
 package biz.cits.idepotent.queue;
 
-import biz.cits.idepotent.queue.consumer.MongoConsumer;
-import biz.cits.idepotent.queue.db.DataStore;
 import biz.cits.idepotent.queue.message.MsgGenerator;
+import biz.cits.idepotent.queue.subscriber.BaseSubscriber;
 import biz.cits.idepotent.queue.work.MasterProducer;
-import biz.cits.idepotent.queue.subscriber.MsgSubscriber;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import io.reactivex.Observable;
 import org.bson.Document;
@@ -22,17 +20,14 @@ import java.util.Optional;
 public class Controller {
 
     private final MasterProducer masterProducer;
-    private final MongoConsumer mongoConsumer;
     private final MongoDatabase mongoDatabase;
-    private final MsgSubscriber msgSubscriber;
-
+    private final BaseSubscriber baseSubscriber;
 
     @Autowired
-    public Controller(MasterProducer masterProducer, MongoConsumer mongoConsumer, DataStore dataStore, MongoDatabase mongoDatabase, MsgSubscriber msgSubscriber) {
+    public Controller(MasterProducer masterProducer, MongoDatabase mongoDatabase, BaseSubscriber baseSubscriber) {
         this.masterProducer = masterProducer;
-        this.mongoConsumer = mongoConsumer;
         this.mongoDatabase = mongoDatabase;
-        this.msgSubscriber = msgSubscriber;
+        this.baseSubscriber = baseSubscriber;
     }
 
     @GetMapping(path = "send", produces = "application/json")
@@ -44,7 +39,7 @@ public class Controller {
 
     @GetMapping(path = "recv", produces = "application/json")
     public String recvMessages() throws Throwable {
-        msgSubscriber.processMessages();
+        baseSubscriber.processMessages();
         return "done";
     }
 
