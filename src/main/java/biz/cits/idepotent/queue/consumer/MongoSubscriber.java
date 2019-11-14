@@ -9,6 +9,9 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.reactivestreams.client.ChangeStreamPublisher;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import io.reactivex.BackpressureOverflowStrategy;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -57,12 +60,20 @@ public class MongoSubscriber implements BaseSubscriber {
         ChangeStreamPublisher<Document> publisher = mongoDatabase.getCollection(queueName).watch(updatePipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
         Observable<ChangeStreamDocument<Document>> observable = Observable.fromPublisher(publisher);
         LOG.info("filter set for process {}", processNodePath);
-        observable.buffer(10).subscribe(this.processor::processObservedBuffered);
+        Flowable<ChangeStreamDocument<Document>>  flowable = observable.toFlowable(BackpressureStrategy.BUFFER);
+        flowable.onBackpressureBuffer(100000);
+        flowable.buffer(10).subscribe(this.processor::processObservedBuffered);
+
 
         // DO NOT DELETE THIS
         //        observable.forEach(t -> {
         //            processObserved(t);
         //            LOG.trace(t.getFullDocument().toJson());
         //        });
+    }
+
+    @Override
+    public boolean processorBufferOverflow() {
+        return false;
     }
 }

@@ -38,16 +38,22 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
         List<String> mongoIds = l.stream().map(t -> "ObjectId('" + t.getDocumentKey().getObjectId("_id").getValue().toString() + "')").collect(Collectors.toList());
         UpdateResult results = Observable.fromPublisher(mongoCollection.updateMany(Document.parse("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}"), Document.parse("{$set : { status: 'processing'}}"))).blockingFirst();
         LOG.debug("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}");
-        LOG.info(results.toString());
-        LOG.info(results.toString());
-        LOG.info("Node {} processed {}", processNodePath, l.size());
+        try {
+            Thread.sleep(12000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        results = Observable.fromPublisher(mongoCollection.updateMany(Document.parse("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}"), Document.parse("{$set : { status: 'processed'}}"))).blockingFirst();
+        LOG.info("Node {} processed {}", processNodePath, results.getModifiedCount());
     }
 
     @Override
     public void processObserved(ChangeStreamDocument<Document> t) {
-        long cnt = Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
+        Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
                 Document.parse("{$set : { status: 'processing'}}"))).blockingFirst().getModifiedCount();
         String processNodePath = zkNodeWatcher.getProcessNodePath();
-        LOG.info("Node {} processed {}", processNodePath, t.getFullDocument().get("assigned"));
+        long cnt = Observable.fromPublisher(mongoCollection.updateOne(Document.parse(t.getFullDocument().toJson()),
+                Document.parse("{$set : { status: 'processed'}}"))).blockingFirst().getModifiedCount();
+        LOG.info("Node {} processed {}", processNodePath, cnt);
     }
 }

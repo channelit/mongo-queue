@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.TimeUnit;
-
 @Component
+@Order(3)
 public class Starter implements ApplicationRunner {
     private final Boolean processorStart;
     private final BaseSubscriber baseSubscriber;
@@ -23,7 +23,6 @@ public class Starter implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         if (processorStart) {
-            TimeUnit.SECONDS.wait(12);
             baseSubscriber.processMessages();
         }
     }
