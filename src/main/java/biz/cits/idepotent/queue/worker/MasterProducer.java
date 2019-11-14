@@ -1,9 +1,8 @@
-package biz.cits.idepotent.queue.work;
+package biz.cits.idepotent.queue.worker;
 
 import biz.cits.idepotent.queue.db.DataStore;
 import biz.cits.idepotent.queue.message.MsgGenerator;
 import biz.cits.idepotent.queue.producer.BaseProducer;
-import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +34,7 @@ public class MasterProducer implements BaseProducer<String> {
     }
 
     @Override
-    public void generateSendMessages(Integer producerBatchSize, Optional<Map<String, String>> assignment) {
+    public void generateSendMessages(Integer producerBatchSize, Optional<Map<String, String>> assignment, int cnt) {
         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(producerBatchSize);
         messages.forEach((e) -> this.sendMessage(e.getKey(), e.getValue(), assignment));
     }

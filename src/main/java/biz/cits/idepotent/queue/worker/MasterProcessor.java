@@ -1,4 +1,4 @@
-package biz.cits.idepotent.queue.work;
+package biz.cits.idepotent.queue.worker;
 
 import biz.cits.idepotent.queue.consumer.MongoSubscriber;
 import biz.cits.idepotent.queue.message.BaseProcessor;

@@ -2,7 +2,7 @@ package biz.cits.idepotent.queue;
 
 import biz.cits.idepotent.queue.message.MsgGenerator;
 import biz.cits.idepotent.queue.subscriber.BaseSubscriber;
-import biz.cits.idepotent.queue.work.MasterProducer;
+import biz.cits.idepotent.queue.worker.MasterProducer;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import io.reactivex.Observable;
 import org.bson.Document;
