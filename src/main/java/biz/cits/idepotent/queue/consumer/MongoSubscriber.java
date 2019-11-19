@@ -9,7 +9,6 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.reactivestreams.client.ChangeStreamPublisher;
 import com.mongodb.reactivestreams.client.MongoDatabase;
-import io.reactivex.BackpressureOverflowStrategy;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -33,14 +32,16 @@ public class MongoSubscriber implements BaseSubscriber {
     private final ZkNodeWatcher zkNodeWatcher;
     private final BaseProcessor processor;
     private final String queueName;
+    private final Integer processorBuffer;
 
     @Autowired
-    public MongoSubscriber(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor,@Value("${db.mongo.queue}") String queueName) {
+    public MongoSubscriber(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor, @Value("${db.mongo.queue}") String queueName,@Value("${queue.processor.buffer.size}") Integer processorBuffer) {
         this.mongoDatabase = mongoDatabase;
         MY_ID = my_id;
         this.zkNodeWatcher = zkNodeWatcher;
         this.processor = baseProcessor;
         this.queueName = queueName;
+        this.processorBuffer = processorBuffer;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class MongoSubscriber implements BaseSubscriber {
         Observable<ChangeStreamDocument<Document>> observable = Observable.fromPublisher(publisher);
         LOG.info("filter set for process {}", processNodePath);
         Flowable<ChangeStreamDocument<Document>>  flowable = observable.toFlowable(BackpressureStrategy.BUFFER);
-        flowable.onBackpressureBuffer(100000);
+        flowable.onBackpressureBuffer(processorBuffer);
         flowable.buffer(10).subscribe(this.processor::processObservedBuffered);
 
 
