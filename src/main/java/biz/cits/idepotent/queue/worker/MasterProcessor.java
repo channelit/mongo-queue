@@ -7,6 +7,7 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import io.micrometer.core.annotation.Timed;
 import io.reactivex.Observable;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
     }
 
     @Override
+    @Timed(value = "processor")
     public void processObservedBuffered(List<ChangeStreamDocument<Document>> l) {
         String processNodePath = zkNodeWatcher.getProcessNodePath();
         List<String> mongoIds = l.stream().map(t -> "ObjectId('" + t.getDocumentKey().getObjectId("_id").getValue().toString() + "')").collect(Collectors.toList());
