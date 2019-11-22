@@ -65,7 +65,6 @@ public class MongoSubscriber implements BaseSubscriber {
         flowable.onBackpressureBuffer(processorBuffer);
         flowable.buffer(10).subscribe(this.processor::processObservedBuffered);
 
-
         // DO NOT DELETE THIS
         //        observable.forEach(t -> {
         //            processObserved(t);
