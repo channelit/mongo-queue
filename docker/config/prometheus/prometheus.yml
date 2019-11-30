@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: 'mongo-queue'
+    metrics_path: '/inspect/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['mongo-queue:8080']
