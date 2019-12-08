@@ -2,12 +2,17 @@ package biz.cits.idepotent;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.connection.ClusterType;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import com.mongodb.reactivestreams.client.Success;
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.reactivex.Observable;
+import org.bson.BsonDocument;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -25,6 +30,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @SpringBootApplication(exclude = {MongoReactiveAutoConfiguration.class, MongoReactiveRepositoriesAutoConfiguration.class, MongoAutoConfiguration.class, MongoRepositoriesAutoConfiguration.class, MongoDataAutoConfiguration.class})
@@ -58,6 +64,9 @@ public class App {
     @Value("${zk.connect.url}")
     private String ZK_CONNECT_URL;
 
+    @Value("${db.mongo.queue}")
+    private String queue_db;
+
     @Bean
     public MongoClient mongoClient() {
 //        MongoCredential mongoCredential = MongoCredential.createCredential(DB_MONGO_USER, "admin", DB_MONGO_PSWD.toCharArray());
@@ -79,6 +88,11 @@ public class App {
 
     @Bean
     public MongoDatabase mongoDatabase(@Qualifier("mongoClient") MongoClient mongoClient) {
+        MongoDatabase db = mongoClient.getDatabase(DB_MONGO_NAME);
+        Observable<Success> observable = Observable.fromPublisher(db.createCollection(queue_db));
+        observable.blockingFirst();
+        Observable<String> ttlIndex = Observable.fromPublisher(db.getCollection(queue_db).createIndex(Indexes.ascending("createdAt"), new IndexOptions().expireAfter(1L, TimeUnit.MINUTES)));
+        ttlIndex.blockingFirst();
         return mongoClient.getDatabase(DB_MONGO_NAME);
     }
 

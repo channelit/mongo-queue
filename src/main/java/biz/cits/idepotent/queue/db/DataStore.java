@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.HashMap;
 
 @Component
@@ -35,6 +36,7 @@ public class DataStore {
         records.forEach(doc::append);
         doc.append("source", MY_ID);
         doc.append("status", "new");
+        doc.append("createdAt", new Date());
         Observable<Success> observable = Observable.fromPublisher(collection.insertOne(doc));
         Success result = observable.blockingFirst();
         LOG.trace("Message sent {} {}", result.toString(), doc.toJson());

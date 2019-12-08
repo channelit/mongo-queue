@@ -63,7 +63,9 @@ public class ZkNodeWatcher implements ApplicationRunner {
                 @Override
                 public void run() {
                     List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
-                    assignmentId = assignmentId >= availableChildren.size() ? 0 : assignmentId + 1;
+                    assignmentId++;
+                    if (assignmentId >= availableChildren.size())
+                        assignmentId = 0;
                     LOG.info("Available children :  {} ", availableChildren.toString());
                     Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(assignmentId)));
                     producer.generateSendMessages(producerBatchSize, assignment, cnt);
