@@ -57,14 +57,17 @@ public class ZkNodeWatcher implements ApplicationRunner {
                 LOG.info("[Process: " + id + "] I am the new leader!");
             }
             TimerTask tt = new TimerTask() {
-                private int cnt=0;
+                private int cnt = 0;
+                private int assignmentId = 0;
+
                 @Override
                 public void run() {
                     List<String> availableChildren = zooKeeperService.getChildren(ZK_ZNODE_FOLDER, false);
+                    assignmentId = assignmentId >= availableChildren.size() ? 0 : assignmentId + 1;
                     LOG.info("Available children :  {} ", availableChildren.toString());
-                    Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(new Random().nextInt(availableChildren.size()))));
+                    Optional<Map<String, String>> assignment = Optional.of(Collections.singletonMap("assigned", availableChildren.get(assignmentId)));
                     producer.generateSendMessages(producerBatchSize, assignment, cnt);
-                    cnt ++;
+                    cnt++;
                 }
             };
             Timer t = new Timer("Message Sender");

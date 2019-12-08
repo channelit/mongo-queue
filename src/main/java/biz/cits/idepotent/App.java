@@ -46,6 +46,12 @@ public class App {
     @Value("${db.mongo.pswd}")
     private String DB_MONGO_PSWD;
 
+    @Value("${db.mongo.conn.max}")
+    private Integer DB_MONGO_CONN_MAX;
+
+    @Value("${db.mongo.conn.min}")
+    private Integer DB_MONGO_CONN_MIN;
+
     @Value("${zk.znode.folder}")
     private String ZK_ZNODE_FOLDER;
 
@@ -62,6 +68,9 @@ public class App {
                         .applyToClusterSettings(builder ->
                                 builder.hosts(hosts).requiredReplicaSetName("fifo").requiredClusterType(ClusterType.REPLICA_SET)
                         )
+                        .applyToConnectionPoolSettings(block -> block
+                                .maxSize(DB_MONGO_CONN_MAX)
+                                .minSize(DB_MONGO_CONN_MIN))
 //                        .credential(mongoCredential)
                         .build());
 
