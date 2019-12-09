@@ -41,7 +41,7 @@ public class MasterProcessor implements BaseProcessor<ChangeStreamDocument<Docum
         UpdateResult results = Observable.fromPublisher(mongoCollection.updateMany(Document.parse("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}"), Document.parse("{$set : { status: 'processing'}}"))).blockingFirst();
         LOG.debug("{_id: { $in:" + Arrays.toString(mongoIds.toArray()) + "}}");
         try {
-            Thread.sleep(12000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

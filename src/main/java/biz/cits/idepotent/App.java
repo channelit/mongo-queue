@@ -90,9 +90,17 @@ public class App {
     public MongoDatabase mongoDatabase(@Qualifier("mongoClient") MongoClient mongoClient) {
         MongoDatabase db = mongoClient.getDatabase(DB_MONGO_NAME);
         Observable<Success> observable = Observable.fromPublisher(db.createCollection(queue_db));
-        observable.blockingFirst();
+        try {
+            System.out.println(observable.blockingFirst());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
         Observable<String> ttlIndex = Observable.fromPublisher(db.getCollection(queue_db).createIndex(Indexes.ascending("createdAt"), new IndexOptions().expireAfter(1L, TimeUnit.MINUTES)));
-        ttlIndex.blockingFirst();
+        try {
+            System.out.println(ttlIndex.blockingFirst());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
         return mongoClient.getDatabase(DB_MONGO_NAME);
     }
 

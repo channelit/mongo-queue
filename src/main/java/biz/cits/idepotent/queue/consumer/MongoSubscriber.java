@@ -34,15 +34,17 @@ public class MongoSubscriber implements BaseSubscriber {
     private final BaseProcessor processor;
     private final String queueName;
     private final Integer processorBuffer;
+    private final Integer producerBatchSize;
 
     @Autowired
-    public MongoSubscriber(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor, @Value("${db.mongo.queue}") String queueName,@Value("${queue.processor.buffer.size}") Integer processorBuffer) {
+    public MongoSubscriber(MongoDatabase mongoDatabase, @Value("${my.id}") String my_id, ZkNodeWatcher zkNodeWatcher, BaseProcessor baseProcessor, @Value("${db.mongo.queue}") String queueName,@Value("${queue.processor.buffer.size}") Integer processorBuffer, @Value("${queue.producer.batch.size}") Integer producerBatchSize) {
         this.mongoDatabase = mongoDatabase;
         MY_ID = my_id;
         this.zkNodeWatcher = zkNodeWatcher;
         this.processor = baseProcessor;
         this.queueName = queueName;
         this.processorBuffer = processorBuffer;
+        this.producerBatchSize = producerBatchSize;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class MongoSubscriber implements BaseSubscriber {
         LOG.info("filter set for process {}", processNodePath);
         Flowable<ChangeStreamDocument<Document>>  flowable = observable.toFlowable(BackpressureStrategy.BUFFER);
         flowable.onBackpressureBuffer(processorBuffer);
-        flowable.buffer(10).subscribe(this.processor::processObservedBuffered);
+        flowable.buffer(producerBatchSize).subscribe(this.processor::processObservedBuffered);
 
         // DO NOT DELETE THIS
         //        observable.forEach(t -> {
