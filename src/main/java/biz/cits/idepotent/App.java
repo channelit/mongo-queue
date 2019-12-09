@@ -67,6 +67,9 @@ public class App {
     @Value("${db.mongo.queue}")
     private String queue_db;
 
+    @Value("${db.mongo.ttl.seconds}")
+    private Long DB_MONGO_TTL_SECONDS;
+
     @Bean
     public MongoClient mongoClient() {
 //        MongoCredential mongoCredential = MongoCredential.createCredential(DB_MONGO_USER, "admin", DB_MONGO_PSWD.toCharArray());
@@ -95,7 +98,7 @@ public class App {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        Observable<String> ttlIndex = Observable.fromPublisher(db.getCollection(queue_db).createIndex(Indexes.ascending("createdAt"), new IndexOptions().expireAfter(1L, TimeUnit.MINUTES)));
+        Observable<String> ttlIndex = Observable.fromPublisher(db.getCollection(queue_db).createIndex(Indexes.ascending("createdAt"), new IndexOptions().expireAfter(DB_MONGO_TTL_SECONDS, TimeUnit.SECONDS)));
         try {
             System.out.println(ttlIndex.blockingFirst());
         } catch (Exception e) {
