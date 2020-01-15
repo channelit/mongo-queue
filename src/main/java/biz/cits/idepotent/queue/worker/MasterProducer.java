@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class MasterProducer implements BaseProducer<String> {
@@ -36,7 +37,12 @@ public class MasterProducer implements BaseProducer<String> {
     @Override
     public void generateSendMessages(Integer producerBatchSize, Optional<Map<String, String>> assignment, int cnt) {
         ArrayList<Map.Entry<String, String>> messages = MsgGenerator.getMessages(producerBatchSize);
+        this.sendMessage(messages, assignment);
         messages.forEach((e) -> this.sendMessage(e.getKey(), e.getValue(), assignment));
+    }
+
+    private void sendMessage(ArrayList<Map.Entry<String, String>> messages, Optional<Map<String, String>> assignment) {
+
     }
 
 }
